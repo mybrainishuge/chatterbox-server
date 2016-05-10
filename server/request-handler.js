@@ -12,6 +12,10 @@ this file and include it in basic-server.js so that it actually works.
 
 **************************************************************/
 
+var resultsObj = {
+  results: []
+};
+
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
   //
@@ -32,14 +36,6 @@ var requestHandler = function(request, response) {
   // The outgoing status.
   var statusCode = 200;
 
-  var results = [];
-
-  var responseObject = {
-    results: [],
-    statusCode: ''
-  };
-
-  var json = JSON.stringify({results});
 
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
@@ -55,15 +51,26 @@ var requestHandler = function(request, response) {
 
   if (request.method === 'POST') {
     statusCode = 201;
-    console.log(request.on('data', function(data) {
-      console.log(data);
-    }));
+    request.on('data', function(chunk) {
+      // console.log('Parsed: ', JSON.parse(chunk));
+      // console.log('Stringed', chunk.toString());
+      resultsObj.results.push(JSON.parse(chunk));
+      // console.log('results: ', resultsObj);
+      // console.log('Stringified: ', JSON.stringify(results[0]));
+    });
+  }
+
+  if (request.method === 'GET') {
+    statusCode = 200;
+  }
+
+  if (request.url !== '/classes/messages' && request.url !== '/') {
+    statusCode = 404;
   }
 
   response.writeHead(statusCode, headers);
 
-
-
+  var json = JSON.stringify(resultsObj);
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
   // response.end() will be the body of the response - i.e. what shows
